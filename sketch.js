@@ -125,6 +125,10 @@ function setupJoycon() {
 
 function drawText() {
   nOff++;
+  
+  let joystickMagnitude = dist(0, 0, leftJoystickX, leftJoystickY);
+  let joystickAngle = atan2(leftJoystickY, leftJoystickX);
+  let scaleFactor = map(joystickMagnitude, 0, 1, 0.5, 2.0); 
 
   for (var x = 0; x < textImg.width; x += pointDensity) {
     for (var y = 0; y < textImg.height; y += pointDensity) {
@@ -138,8 +142,6 @@ function drawText() {
           strokeWeight(1);
 
           var noiseFac = map(rightJoystickY, -1, 1, 0, 1);
-          let angle = atan2(leftJoystickY, leftJoystickX);
-          let joystickMagnitude = dist(0, 0, leftJoystickX, leftJoystickY);
           var lengthFac = map(joystickMagnitude, 0, 1, 0.01, 0.3);
 
           var num = noise((x + nOff) * noiseFac, y * noiseFac);
@@ -154,20 +156,22 @@ function drawText() {
           push();
           translate(x, y);
           // Apply the rotation based on joystick angle
-          rotate(angle);
+          rotate(joystickAngle);
           // Apply the length based on joystick magnitude
           line(0, 0, fontSize * lengthFac, 0);
           pop();
         }
 
         if (drawMode == 2) {
-          stroke(0, 0, 0);
-          strokeWeight(1);
           noStroke();
           push();
           translate(x, y);
+          
+          var noiseXOffset = map(leftJoystickX, -1, 1, -50, 50); // Map joystick X to a range for noise offset
+          // Use joystick Y to influence noise offset, creating vertical "drift" or pattern shift
+          var noiseYOffset = map(leftJoystickY, -1, 1, -50, 50); // Map joystick Y to a range for noise offset
 
-          var num = noise((x + nOff) / 10, y / 10);
+          var num = noise((x + nOff + noiseXOffset) / 10, (y / 10) + noiseYOffset / 100); // Add noise offsets
 
           if (num < 0.6) {
             fill(colors[0]);
@@ -177,15 +181,17 @@ function drawText() {
             fill(colors[2]);
           }
 
-          var w = noise((x - nOff) / 10, (y + nOff * 0.1) / 10) * 20;
-          var h = noise((x - nOff) / 10, (y + nOff * 0.1) / 10) * 10;
-          ellipse(0, 0, w, h); // rect() is cool too
+          // Use joystick magnitude to influence the overall size of ellipses
+          var w = noise((x - nOff) / 10, (y + nOff * 0.1) / 10) * 20 * scaleFactor;
+          var h = noise((x - nOff) / 10, (y + nOff * 0.1) / 10) * 10 * scaleFactor;
+
+          // Rotate the ellipses based on the joystick angle
+          rotate(joystickAngle);
+          ellipse(0, 0, w, h);
           pop();
         }
 
         if (drawMode == 3) {
-          stroke(0, 0, 0);
-          strokeWeight(1);
           noStroke();
 
           var num = random(1);
@@ -199,6 +205,7 @@ function drawText() {
           }
 
           push();
+          scale(scaleFactor);
           beginShape();
           for (var i = 0; i < 3; i++) {
             var ox =
@@ -221,9 +228,12 @@ function drawText() {
           stroke(colors[0]);
           strokeWeight(3);
 
-          point(x - 10, y - 10);
-          point(x, y);
-          point(x + 10, y + 10);
+          let baseOffsetX = map(leftJoystickX, -1, 1, -5, 5); // Small offset for base points
+          let baseOffsetY = map(leftJoystickY, -1, 1, -5, 5);
+
+          point(x - 10 + baseOffsetX, y - 10 + baseOffsetY);
+          point(x + baseOffsetX, y + baseOffsetY);
+          point(x + 10 + baseOffsetX, y + 10 + baseOffsetY);
 
           for (var i = 0; i < 5; i++) {
             if (i == 1) {
@@ -232,13 +242,18 @@ function drawText() {
               stroke(colors[2]);
             }
 
+            // Introduce joystick influence into the noise-based offsets for points
+            let joystickNoiseFactor = map(joystickMagnitude, 0, 1, 0.5, 1.5); // Adjust noise "amplitude"
+            let joystickNoiseShiftX = map(leftJoystickX, -1, 1, -20, 20); // Shift noise pattern
+            let joystickNoiseShiftY = map(leftJoystickY, -1, 1, -20, 20);
+
             if (i % 2 == 0) {
-              var ox = noise((10000 + i * 100 + x - nOff) / 10) * 10;
-              var oy = noise((20000 + i * 100 + x - nOff) / 10) * 10;
+              var ox = noise((10000 + i * 100 + x - nOff + joystickNoiseShiftX) / 10) * 10 * joystickNoiseFactor;
+              var oy = noise((20000 + i * 100 + x - nOff + joystickNoiseShiftY) / 10) * 10 * joystickNoiseFactor;
               point(x + ox, y + oy);
             } else {
-              var ox = noise((30000 + i * 100 + x - nOff) / 10) * 10;
-              var oy = noise((40000 + i * 100 + x - nOff) / 10) * 10;
+              var ox = noise((30000 + i * 100 + x - nOff + joystickNoiseShiftX) / 10) * 10 * joystickNoiseFactor;
+              var oy = noise((40000 + i * 100 + x - nOff + joystickNoiseShiftY) / 10) * 10 * joystickNoiseFactor;
               point(x - ox, y - oy);
             }
           }
