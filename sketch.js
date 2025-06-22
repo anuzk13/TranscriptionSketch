@@ -1,11 +1,11 @@
-// Transcription code 
+// Transcription code
 // https://medium.spatialpixel.com/sounds-bd05429aba38
 // typography code
 // http://www.generative-gestaltung.de/2/sketches/?01_P/P_3_2_5_01
 
 let speechRecognition;
 let isListening = false;
-let textToShow = "";
+let textToShow = "Habla!";
 
 // Typography
 var font;
@@ -17,16 +17,21 @@ var pointDensity = 8;
 var colors;
 var paths;
 var textImg;
+let leftJoystickX = 0;
+let leftJoystickY = 0;
+let rightJoystickX = 0;
+let rightJoystickY = 0;
 
 function preload() {
-  font = loadFont('data/FiraSansCompressed-Bold.otf');
+  font = loadFont("data/FiraSansCompressed-Bold.otf");
 }
-
 
 function setup() {
   createCanvas(1600, 800);
   frameRate(25);
   rectMode(CENTER);
+
+  setupJoycon();
 
   colors = [color(65, 105, 185), color(245, 95, 80), color(15, 233, 118)];
   pixelDensity(1);
@@ -35,15 +40,17 @@ function setup() {
 
   // Initialize speech recognition
   speechRecognition = new webkitSpeechRecognition() || new SpeechRecognition();
-  speechRecognition.continuous = true;   
+  speechRecognition.continuous = true;
   speechRecognition.interimResults = true;
-  speechRecognition.lang = 'es-MX';
+  speechRecognition.lang = "es-MX";
 
   // Handle the result event
-  speechRecognition.onresult = function(event) {
+  speechRecognition.onresult = function (event) {
     if (event.results.length > 0) {
       // results.length indicates the latest script built
-      textToShow = event.results[event.results.length-1][0].transcript.split(" ").at(-1);
+      textToShow = event.results[event.results.length - 1][0].transcript
+        .split(" ")
+        .at(-1);
       setupText(textToShow);
     }
   };
@@ -55,7 +62,8 @@ function draw() {
 }
 
 function keyPressed() {
-  if (keyCode === 32) { // Spacebar
+  if (keyCode === 32) {
+    // Spacebar
     if (!isListening) {
       speechRecognition.start();
       isListening = true;
@@ -64,7 +72,8 @@ function keyPressed() {
 }
 
 function keyReleased() {
-  if (keyCode === 32) { // Spacebar
+  if (keyCode === 32) {
+    // Spacebar
     if (isListening) {
       speechRecognition.stop();
       isListening = false;
@@ -72,8 +81,49 @@ function keyReleased() {
   }
 }
 
-function drawText() {
+function setupJoycon() {
+  const controllers = Joycon.controllers;
+
+  controllers.on.move("left-joystick", (value) => {
+    leftJoystickX = value.x;
+    leftJoystickY = value.y;
+  });
+
+  controllers.on.move("right-joystick", (value) => {
+    rightJoystickX = value.x;
+    rightJoystickY = value.y;
+  });
+
+  controllers.on.press('right-shoulder', (value) => {
+    // 1 is press 0 is release
+    if (value==1){
+      if (!isListening) {
+        speechRecognition.start();
+        isListening = true;
+      }
+    } else if (value == 0) {
+        if (isListening) {
+          speechRecognition.stop();
+          isListening = false;
+        }
+    }
+  });
   
+  var drawModes = ['x', 'y', 'a', 'b'];
+  for (let i = 1; i <5; i++) {
+    var button = drawModes[i-1];
+    console.log(i)
+     controllers.on.press(button, (value) => {
+        if (value==1){
+          drawMode = i;
+          console.log(drawMode)
+        }
+    });
+  }
+ 
+}
+
+function drawText() {
   nOff++;
 
   for (var x = 0; x < textImg.width; x += pointDensity) {
@@ -84,12 +134,13 @@ function drawText() {
       var r = textImg.pixels[index];
 
       if (r < 128) {
-
-        if (drawMode == 1){
+        if (drawMode == 1) {
           strokeWeight(1);
 
-          var noiseFac = map(mouseX, 0, width, 0, 1);
-          var lengthFac = map(mouseY, 0, height, 0.01, 1);
+          var noiseFac = map(rightJoystickY, -1, 1, 0, 1);
+          let angle = atan2(leftJoystickY, leftJoystickX);
+          let joystickMagnitude = dist(0, 0, leftJoystickX, leftJoystickY);
+          var lengthFac = map(joystickMagnitude, 0, 1, 0.01, 0.3);
 
           var num = noise((x + nOff) * noiseFac, y * noiseFac);
           if (num < 0.6) {
@@ -102,12 +153,14 @@ function drawText() {
 
           push();
           translate(x, y);
-          rotate(radians(frameCount));
+          // Apply the rotation based on joystick angle
+          rotate(angle);
+          // Apply the length based on joystick magnitude
           line(0, 0, fontSize * lengthFac, 0);
           pop();
         }
 
-        if (drawMode == 2){
+        if (drawMode == 2) {
           stroke(0, 0, 0);
           strokeWeight(1);
           noStroke();
@@ -130,7 +183,7 @@ function drawText() {
           pop();
         }
 
-        if (drawMode == 3){
+        if (drawMode == 3) {
           stroke(0, 0, 0);
           strokeWeight(1);
           noStroke();
@@ -147,16 +200,24 @@ function drawText() {
 
           push();
           beginShape();
-          for (var i = 0; i < 3; i++){
-            var ox = (noise((i * 1000 + x - nOff) / 30, (i * 3000 + y + nOff) / 30) - 0.5) * pointDensity * 6;
-            var oy = (noise((i * 2000 + x - nOff) / 30, (i * 4000 + y + nOff) / 30) - 0.5) * pointDensity * 6;
+          for (var i = 0; i < 3; i++) {
+            var ox =
+              (noise((i * 1000 + x - nOff) / 30, (i * 3000 + y + nOff) / 30) -
+                0.5) *
+              pointDensity *
+              6;
+            var oy =
+              (noise((i * 2000 + x - nOff) / 30, (i * 4000 + y + nOff) / 30) -
+                0.5) *
+              pointDensity *
+              6;
             vertex(x + ox, y + oy);
           }
           endShape(CLOSE);
           pop();
         }
 
-        if (drawMode == 4){
+        if (drawMode == 4) {
           stroke(colors[0]);
           strokeWeight(3);
 
@@ -164,14 +225,14 @@ function drawText() {
           point(x, y);
           point(x + 10, y + 10);
 
-          for (var i = 0; i < 5; i++){
+          for (var i = 0; i < 5; i++) {
             if (i == 1) {
               stroke(colors[1]);
             } else if (i == 3) {
               stroke(colors[2]);
             }
 
-            if (i % 2 == 0){
+            if (i % 2 == 0) {
               var ox = noise((10000 + i * 100 + x - nOff) / 10) * 10;
               var oy = noise((20000 + i * 100 + x - nOff) / 10) * 10;
               point(x + ox, y + oy);
@@ -182,7 +243,6 @@ function drawText() {
             }
           }
         }
-
       }
     }
   }
