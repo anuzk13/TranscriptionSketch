@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.7/lib/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/p5@1.11.7/lib/addons/p5.sound.min.js"></script>
     
      <!-- GG Bundled -->
@@ -18,14 +18,22 @@
       crossorigin="anonymous"></script>
     
     <script src="https://joycon.js.org/Joycon.min.js"></script>
-    
-    <link rel="stylesheet" type="text/css" href="style.css">
-    <meta charset="utf-8" />
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
 
+      header {
+        padding: 20px;
+      }
+    </style>
+    <meta charset="utf-8" />
   </head>
+
   <body>
-    <main>
-    </main>
+    <script src="https://cdn.statically.io/gh/jdeboi/p5.mapper/main/dist/p5.mapper.min.js"></script>
+    <script src="typography.js"></script>
     <script src="sketch.js"></script>
   </body>
 </html>
