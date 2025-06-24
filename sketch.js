@@ -15,7 +15,6 @@ var padding = 10;
 var nOff = 0;
 var pointDensity = 8;
 var colors;
-var paths;
 var textImg;
 let leftJoystickX = 0;
 let leftJoystickY = 0;
@@ -32,28 +31,12 @@ function setup() {
   rectMode(CENTER);
 
   setupJoycon();
+  setupSpeechRecognition();
 
   colors = [color(65, 105, 185), color(245, 95, 80), color(15, 233, 118)];
   pixelDensity(1);
 
   setupText(textToShow);
-
-  // Initialize speech recognition
-  speechRecognition = new webkitSpeechRecognition() || new SpeechRecognition();
-  speechRecognition.continuous = true;
-  speechRecognition.interimResults = true;
-  speechRecognition.lang = "es-MX";
-
-  // Handle the result event
-  speechRecognition.onresult = function (event) {
-    if (event.results.length > 0) {
-      // results.length indicates the latest script built
-      textToShow = event.results[event.results.length - 1][0].transcript
-        .split(" ")
-        .at(-1);
-      setupText(textToShow);
-    }
-  };
 }
 
 function draw() {
@@ -79,6 +62,25 @@ function keyReleased() {
       isListening = false;
     }
   }
+}
+
+function setupSpeechRecognition() {
+  // Initialize speech recognition
+  speechRecognition = new webkitSpeechRecognition() || new SpeechRecognition();
+  speechRecognition.continuous = true;
+  speechRecognition.interimResults = true;
+  speechRecognition.lang = "es-MX";
+
+  // Handle the result event
+  speechRecognition.onresult = function (event) {
+    if (event.results.length > 0) {
+      // results.length indicates the latest script built
+      textToShow = event.results[event.results.length - 1][0].transcript
+        .split(" ")
+        .at(-1);
+      setupText(textToShow);
+    }
+  };
 }
 
 function setupJoycon() {
